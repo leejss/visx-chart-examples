@@ -4,7 +4,7 @@ import { curveMonotoneX } from "@visx/curve";
 import { Grid } from "@visx/grid";
 import { scaleLinear } from "@visx/scale";
 import { line } from "@visx/shape";
-import { extent } from "@visx/vendor/d3-array";
+import { extent } from "d3-array";
 import { useMemo, useState } from "react";
 
 interface DataPoint {
@@ -12,7 +12,6 @@ interface DataPoint {
   y: number;
 }
 
-// 샘플 데이터 생성 함수
 const generateData = (count: number, min: number, max: number): DataPoint[] => {
   return Array.from({ length: count }, (_, i) => ({
     x: i,
@@ -20,10 +19,7 @@ const generateData = (count: number, min: number, max: number): DataPoint[] => {
   }));
 };
 
-// AnimatedPath 컴포넌트 정의
-// React Spring과 SVG path를 결합하여 애니메이션 구현
-const AnimatedPath = animated.path;
-
+// 데이터 셋 변경 -> 라인 변경 애니메이션
 const AnimatedLineChart = () => {
   // 차트 크기 설정
   const width = 600;
@@ -36,18 +32,22 @@ const AnimatedLineChart = () => {
 
   // 데이터 상태 관리
   const [data, setData] = useState<DataPoint[]>(() => generateData(10, 0, 100));
+
+  // 이전 데이터 셋을 저장하는 상태
   const [prevData, setPrevData] = useState(data);
 
   // 스케일 설정
+  // 값을 position으로 변경
+  // memoized mapping function
   const xScale = useMemo(() => {
+    // find min and max value of x
     const domain = extent(data, (d) => d.x) as [number, number];
+    //  think of it as a mathematical function that maps values from a domain (your data's min/max values) to a range (the pixel dimensions of your chart).
     return scaleLinear({
       domain,
       range: [0, innerWidth],
     });
   }, [data, innerWidth]);
-
-  // get positiono of x -> xScale(d.x)
 
   const yScale = useMemo(() => {
     const allData = [...data, ...prevData];
@@ -68,13 +68,18 @@ const AnimatedLineChart = () => {
   };
 
   // 애니메이션 설정
+
+  // animated transition between two svg paths using spring physics.
   const springProps = useSpring({
     to: {
       path: getPath(data),
     },
+
+    // Starting states
     from: {
       path: getPath(prevData),
     },
+
     config: {
       tension: 200,
       friction: 50,
@@ -107,6 +112,7 @@ const AnimatedLineChart = () => {
         Update Data
       </button>
       <svg width={width} height={height}>
+        {/* Grouping */}
         <g transform={`translate(${margin.left},${margin.top})`}>
           {/* 그리드 */}
           <Grid
@@ -115,13 +121,14 @@ const AnimatedLineChart = () => {
             width={innerWidth}
             height={innerHeight}
             stroke="#e0e0e0"
-            strokeOpacity={0.3}
             numTicksRows={5}
             numTicksColumns={5}
           />
 
           {/* 애니메이션되는 라인 */}
-          <AnimatedPath
+          {/* animated component는 spring props를 이해한다. */}
+          <animated.path
+            // shape of path
             d={springProps.path}
             stroke="#2196f3"
             strokeWidth={3}
@@ -132,7 +139,9 @@ const AnimatedLineChart = () => {
           {data.map((d, i) => (
             <animated.circle
               key={i}
+              // x coordinate
               cx={xScale(d.x)}
+              // y coordinate
               cy={to(
                 pointSpring.t,
                 (t) => yScale(prevData[i]?.y || 0) * (1 - t) + yScale(d.y) * t,

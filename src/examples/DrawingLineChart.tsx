@@ -129,7 +129,7 @@ const DrawingLineChart = () => {
           />
 
           {/* 데이터 포인트 */}
-          {data.map((d, i) => (
+          {/* {data.map((d, i) => (
             <animated.circle
               key={i}
               cx={xScale(d.x)}
@@ -140,7 +140,7 @@ const DrawingLineChart = () => {
                 opacity: pointSpring.opacity,
               }}
             />
-          ))}
+          ))} */}
 
           {/* Y축 */}
           <AxisLeft
