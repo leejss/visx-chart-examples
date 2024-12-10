@@ -1,9 +1,9 @@
-import LineChartWithAxisAndGridCopy from "./examples/LineChartWithAxisAndGrid copy";
+import { AnimatedLineChartWithDynamicData } from "./examples/AnimatedLineChartWithDynamicData";
 
 export default function App() {
   return (
     <div>
-      <LineChartWithAxisAndGridCopy />
+      <AnimatedLineChartWithDynamicData />
     </div>
   );
 }
