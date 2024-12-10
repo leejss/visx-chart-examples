@@ -5,7 +5,7 @@ import { AxisLeft, AxisBottom } from "@visx/axis";
 import { Grid } from "@visx/grid";
 import { localPoint } from "@visx/event";
 import { LinearGradient } from "@visx/gradient";
-import { extent, bisector } from "@visx/vendor/d3-array";
+import { extent, bisector } from "d3-array";
 import { useTooltip, TooltipWithBounds, defaultStyles } from "@visx/tooltip";
 import { timeFormat } from "d3-time-format";
 
@@ -35,12 +35,11 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
   height = 400,
   data,
 }) => {
-  // 차트 여백 설정
+  // Set avg dimension
   const margin = { top: 20, right: 20, bottom: 40, left: 50 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
-  // Tooltip 상태 관리를 위한 visx hook 사용
   const {
     showTooltip,
     hideTooltip,
@@ -73,6 +72,10 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
   }, [data, innerHeight]);
 
   // 라인 생성기
+  // The .x() method defines how to get the x-coordinate, converting dates to timestamps and then to pixel values using xScale
+  // The .y() method defines how to get the y-coordinate, using yScale to convert data values to pixel positions
+  // The .curve(curveMonotoneX) method sets the interpolation method between points to create a smooth, monotonic line that preserves monotonicity in the data
+  // Converting data points to a line path
   const linePath = useMemo(() => {
     const lineGenerator = line<DataPoint>()
       .x((d) => xScale(getDate(d).getTime()))
@@ -85,32 +88,36 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
   // 마우스 이벤트 핸들러
   const handleMouseMove = useCallback(
     (event: React.MouseEvent | React.TouchEvent) => {
-      const { left, top } = (
-        event.target as SVGElement
-      ).getBoundingClientRect();
       const point = localPoint(event) || { x: 0, y: 0 };
       const x = point.x - margin.left;
 
       // x 좌표로부터 시간 값 계산
+      // xScale : input data를 픽셀로 변환
+      // xScale.invert : 픽셀를 input data으로 변환
       const timestamp = xScale.invert(x);
 
       // 가장 가까운 데이터 포인트 찾기
+
+      // Role of bisectDate: Given a sorted array and a value, returns the index of the array element closest to the value
       const index = bisectDate(data, new Date(timestamp));
       const d0 = data[index - 1];
       const d1 = data[index];
 
       if (d0 && d1) {
-        const d =
-          timestamp - getDate(d0).getTime() > getDate(d1).getTime() - timestamp
-            ? d1
-            : d0;
+        // 삼항 연산자를 사용하여 d0와 d1 중 timestamp와 더 가까운 포인트를 선택합니다
+        const isCloserToD1 =
+          timestamp - getDate(d0).getTime() > getDate(d1).getTime() - timestamp;
+
+        const tooltipData = isCloserToD1 ? d1 : d0;
 
         showTooltip({
-          tooltipData: d,
-          tooltipLeft: xScale(getDate(d).getTime()) + margin.left,
-          tooltipTop: yScale(getValue(d)) + margin.top,
+          tooltipData,
+          tooltipLeft: xScale(getDate(tooltipData).getTime()) + margin.left,
+          tooltipTop: yScale(getValue(tooltipData)) + margin.top,
         });
-        setHoverLineX(xScale(getDate(d).getTime()));
+
+        // Convert timestamp to x-coordinate
+        setHoverLineX(xScale(getDate(tooltipData).getTime()));
       }
     },
     [showTooltip, xScale, yScale, data, margin],
@@ -127,6 +134,7 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
           toOpacity={0}
         />
 
+        {/* Add margin */}
         <g transform={`translate(${margin.left},${margin.top})`}>
           {/* 그리드 */}
           <Grid
@@ -135,7 +143,7 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
             width={innerWidth}
             height={innerHeight}
             stroke="#e0e0e0"
-            strokeOpacity={0.2}
+            strokeOpacity={0.4}
             numTicksRows={5}
             numTicksColumns={10}
           />
@@ -148,7 +156,7 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
             fill="none"
           />
 
-          {/* 호버 영역 */}
+          {/* Event capture area */}
           <rect
             width={innerWidth}
             height={innerHeight}
@@ -167,9 +175,10 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
               x2={hoverLineX}
               y1={0}
               y2={innerHeight}
-              stroke="#666"
+              stroke="#000"
               strokeWidth={1}
-              strokeDasharray="4,4"
+              strokeOpacity={0.2}
+              // strokeDasharray="4,4"
               pointerEvents="none"
             />
           )}
@@ -183,6 +192,7 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
             tickStroke="#888888"
             label="Date"
           />
+
           <AxisLeft
             scale={yScale}
             stroke="#888888"
