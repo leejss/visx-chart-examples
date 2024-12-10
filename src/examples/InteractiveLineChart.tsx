@@ -8,6 +8,7 @@ import { LinearGradient } from "@visx/gradient";
 import { extent, bisector } from "d3-array";
 import { useTooltip, TooltipWithBounds, defaultStyles } from "@visx/tooltip";
 import { timeFormat } from "d3-time-format";
+import { format } from "date-fns";
 
 // 데이터 포인트 타입 정의
 interface DataPoint {
@@ -187,7 +188,10 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
           <AxisBottom
             top={innerHeight}
             scale={xScale}
-            tickFormat={(val) => formatDate(new Date(val))}
+            // tickFormat={(val) => formatDate(val as Date)}
+            tickFormat={(val) => {
+              return format(val as Date, "MM");
+            }}
             stroke="#888888"
             tickStroke="#888888"
             label="Date"
