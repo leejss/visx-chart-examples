@@ -1,9 +1,9 @@
-import { AnimatedLineChartWithDynamicData } from "./examples/AnimatedLineChartWithDynamicData";
+import DrawingLineChart from "./examples/DrawingLineChart";
 
 export default function App() {
   return (
     <div>
-      <AnimatedLineChartWithDynamicData />
+      <DrawingLineChart />
     </div>
   );
 }
