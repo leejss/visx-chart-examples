@@ -9,10 +9,6 @@ import { timeFormat } from "d3-time-format";
 import React, { useCallback, useMemo, useState } from "react";
 import { generateMultipleSeriesData } from "../lib/data";
 
-// TODO : Each series must have own tooltip
-// TODO : 툴팁읍 서로 겹치지 않아야 한다.
-// TODO: use GlyphCircle to show the point
-
 // 타입 정의
 interface DataPoint {
   date: Date;
@@ -51,17 +47,12 @@ const SeriesToolTip: React.FC<{
   color: string;
   index: number;
   total: number;
-}> = ({ data, color, index, total }) => {
-  const verticalOffset = 40;
-  const tooltipSpacing = 10;
-  const adjustedTop =
-    data.yPos - verticalOffset - (total - 1 - index) * tooltipSpacing;
-
+}> = ({ data, color }) => {
   return (
     <TooltipWithBounds
-      className="pointer-events-none px-2 py-1 rounded shadow-md text-sm inline-block "
+      className="pointer-events-none px-2 rounded shadow-md text-sm inline-block "
       left={data.xPos}
-      top={adjustedTop}
+      top={data.yPos}
       style={{
         ...defaultStyles,
         transition: "all 0.1s ease-out",
@@ -95,8 +86,8 @@ const TimestampLabel: React.FC<{
 );
 const margin = { top: 40, right: 120, bottom: 40, left: 50 };
 const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
-  width = 800,
-  height = 400,
+  width = 1600,
+  height = 900,
   series,
 }) => {
   // 차트 여백 설정
@@ -138,6 +129,8 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
   }, [series, innerHeight]);
 
   // 마우스 이벤트 핸들러
+  const TOOLTIP_SPACING = 10;
+  const TOOLTIP_HEIGHT = 25;
   const handleMouseMove = useCallback(
     (event: React.MouseEvent | React.TouchEvent) => {
       const point = localPoint(event) || { x: 0, y: 0 };
@@ -145,7 +138,7 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
       const timestamp = xScale.invert(x);
       const date = new Date(timestamp);
 
-      // 각 활성화된 시리즈의 해당 시점 값을 찾음
+      // 각 툴팁에 대한 위치 정보
       const tooltips = series
         .map((s) => {
           const index = bisectDate(s.data, date);
@@ -167,10 +160,27 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
             yPos: yScale(getValue(d)) + margin.top,
           };
         })
-        .filter((v): v is NonNullable<typeof v> => v !== null);
+        .filter((v): v is NonNullable<typeof v> => v !== null)
+        .sort((a, b) => b.value - a.value);
+
+      const modified = [...tooltips];
+      for (let i = 1; i < modified.length; i++) {
+        const prevTooltip = modified[i - 1];
+        const tooltip = modified[i];
+
+        if (
+          Math.abs(prevTooltip.yPos - tooltip.yPos) <
+          TOOLTIP_SPACING + TOOLTIP_HEIGHT
+        ) {
+          modified[i] = {
+            ...tooltip,
+            yPos: prevTooltip.yPos + TOOLTIP_SPACING + TOOLTIP_HEIGHT,
+          };
+        }
+      }
 
       setHoverInfo({
-        tooltips,
+        tooltips: modified,
         hoverLineX: x,
         date,
       });
@@ -292,7 +302,7 @@ export const EnhancedChartExample: React.FC = () => {
 
   return (
     <div className="p-4">
-      <EnhancedMultiSeriesChart2 width={900} height={400} series={seriesData} />
+      <EnhancedMultiSeriesChart2 width={800} height={400} series={seriesData} />
     </div>
   );
 };
