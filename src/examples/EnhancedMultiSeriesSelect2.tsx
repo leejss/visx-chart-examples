@@ -10,6 +10,10 @@ import React, { useCallback, useMemo, useState } from "react";
 import { generateMultipleSeriesData } from "../lib/data";
 import { TooltipWithBounds } from "@visx/tooltip";
 
+// TODO : Each series must have own tooltip
+// TODO : 툴팁읍 서로 겹치지 않아야 한다.
+// TODO : visx의 LinePath 컴포넌트를 사용 ?
+
 // 타입 정의
 interface DataPoint {
   date: Date;
@@ -46,25 +50,55 @@ const bisectDate = bisector<DataPoint, Date>((d) => d.date).left;
 const SeriesToolTip: React.FC<{
   data: TooltipData;
   color: string;
-}> = ({ data, color }) => (
-  <TooltipWithBounds
-    className="pointer-events-none"
-    left={data.xPos}
-    top={data.yPos - 40}
-  >
-    <div
-      className="px-2 py-1 rounded shadow-md text-sm"
+  index: number;
+  total: number;
+}> = ({ data, color, index, total }) => {
+  // 툴팁 높이와 간격 설정
+  const TOOLTIP_HEIGHT = 40;
+  const TOOLTIP_GAP = 5;
+
+  // 툴팁들을 데이터 포인트 위나 아래에 배치할지 결정
+  const shouldPositionAbove = data.yPos < window.innerHeight / 2;
+
+  // 툴팁의 수직 위치 계산
+  let verticalPosition;
+  if (shouldPositionAbove) {
+    // 데이터 포인트 위에 툴팁을 배치
+    verticalPosition =
+      data.yPos -
+      TOOLTIP_HEIGHT -
+      (total - 1 - index) * (TOOLTIP_HEIGHT + TOOLTIP_GAP) -
+      10;
+  } else {
+    // 데이터 포인트 아래에 툴팁을 배치
+    verticalPosition = data.yPos + 10 + index * (TOOLTIP_HEIGHT + TOOLTIP_GAP);
+  }
+
+  return (
+    <TooltipWithBounds
+      className="pointer-events-none"
+      left={data.xPos}
+      // top={data.yPos - 40}
+      top={verticalPosition}
       style={{
-        backgroundColor: color,
-        color: "white",
+        transform: "translateX(-50%)",
+        transition: "top 0.1s ease-out",
       }}
     >
-      <div className="font-medium">
-        {data.seriesName} {data.value.toFixed(2)}
+      <div
+        className="px-2 py-1 rounded shadow-md text-sm"
+        style={{
+          backgroundColor: color,
+          color: "white",
+        }}
+      >
+        <div className="font-medium">
+          {data.seriesName} {data.value.toFixed(2)}
+        </div>
       </div>
-    </div>
-  </TooltipWithBounds>
-);
+    </TooltipWithBounds>
+  );
+};
 
 // 타임스탬프 레이블 컴포넌트
 const TimestampLabel: React.FC<{
@@ -200,15 +234,19 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
       )}
 
       {/* 시리즈별 툴팁 */}
-      {hoverInfo.tooltips.map((tooltip) => (
-        <SeriesToolTip
-          key={tooltip.seriesName}
-          data={tooltip}
-          color={
-            series.find((s) => s.name === tooltip.seriesName)?.color || "#000"
-          }
-        />
-      ))}
+      {hoverInfo.tooltips
+        .sort((a, b) => a.yPos - b.yPos)
+        .map((tooltip, index) => (
+          <SeriesToolTip
+            key={tooltip.seriesName}
+            data={tooltip}
+            index={index}
+            total={hoverInfo.tooltips.length}
+            color={
+              series.find((s) => s.name === tooltip.seriesName)?.color || "#000"
+            }
+          />
+        ))}
 
       <svg width={width} height={height}>
         <g transform={`translate(${margin.left},${margin.top})`}>

@@ -1,6 +1,6 @@
 import { addDays, subDays } from "date-fns";
 
-interface DataPoint {
+export interface DataPoint {
   date: Date;
   value: number;
 }
