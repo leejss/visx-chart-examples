@@ -1,9 +1,9 @@
-import LineChartExample2 from "./examples/LineChartExample2";
+import EnhancedChartExample from "./examples/EnhancedMultiSeriesSelect2";
 
 export default function App() {
   return (
     <div className="w-full h-screen flex justify-center items-center">
-      <LineChartExample2 />
+      <EnhancedChartExample />
     </div>
   );
 }

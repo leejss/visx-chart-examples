@@ -1,18 +1,17 @@
 import { AxisBottom, AxisLeft } from "@visx/axis";
-import { curveMonotoneX } from "@visx/curve";
 import { localPoint } from "@visx/event";
-import { Grid } from "@visx/grid";
+import { Group } from "@visx/group";
 import { scaleLinear } from "@visx/scale";
+import { Circle, LinePath } from "@visx/shape";
+import { defaultStyles, TooltipWithBounds } from "@visx/tooltip";
 import { bisector, extent } from "@visx/vendor/d3-array";
-import { line } from "d3-shape";
 import { timeFormat } from "d3-time-format";
 import React, { useCallback, useMemo, useState } from "react";
 import { generateMultipleSeriesData } from "../lib/data";
-import { TooltipWithBounds } from "@visx/tooltip";
 
 // TODO : Each series must have own tooltip
 // TODO : 툴팁읍 서로 겹치지 않아야 한다.
-// TODO : visx의 LinePath 컴포넌트를 사용 ?
+// TODO: use GlyphCircle to show the point
 
 // 타입 정의
 interface DataPoint {
@@ -53,48 +52,26 @@ const SeriesToolTip: React.FC<{
   index: number;
   total: number;
 }> = ({ data, color, index, total }) => {
-  // 툴팁 높이와 간격 설정
-  const TOOLTIP_HEIGHT = 40;
-  const TOOLTIP_GAP = 5;
-
-  // 툴팁들을 데이터 포인트 위나 아래에 배치할지 결정
-  const shouldPositionAbove = data.yPos < window.innerHeight / 2;
-
-  // 툴팁의 수직 위치 계산
-  let verticalPosition;
-  if (shouldPositionAbove) {
-    // 데이터 포인트 위에 툴팁을 배치
-    verticalPosition =
-      data.yPos -
-      TOOLTIP_HEIGHT -
-      (total - 1 - index) * (TOOLTIP_HEIGHT + TOOLTIP_GAP) -
-      10;
-  } else {
-    // 데이터 포인트 아래에 툴팁을 배치
-    verticalPosition = data.yPos + 10 + index * (TOOLTIP_HEIGHT + TOOLTIP_GAP);
-  }
+  const verticalOffset = 40;
+  const tooltipSpacing = 10;
+  const adjustedTop =
+    data.yPos - verticalOffset - (total - 1 - index) * tooltipSpacing;
 
   return (
     <TooltipWithBounds
-      className="pointer-events-none"
+      className="pointer-events-none px-2 py-1 rounded shadow-md text-sm inline-block "
       left={data.xPos}
-      // top={data.yPos - 40}
-      top={verticalPosition}
+      top={adjustedTop}
       style={{
-        transform: "translateX(-50%)",
-        transition: "top 0.1s ease-out",
+        ...defaultStyles,
+        transition: "all 0.1s ease-out",
+        whiteSpace: "nowrap",
+        width: "auto",
+        backgroundColor: color,
       }}
     >
-      <div
-        className="px-2 py-1 rounded shadow-md text-sm"
-        style={{
-          backgroundColor: color,
-          color: "white",
-        }}
-      >
-        <div className="font-medium">
-          {data.seriesName} {data.value.toFixed(2)}
-        </div>
+      <div className="font-medium whitespace-nowrap text-white">
+        {data.seriesName} {data.value.toFixed(2)}
       </div>
     </TooltipWithBounds>
   );
@@ -116,14 +93,14 @@ const TimestampLabel: React.FC<{
     {formatDate(date)}
   </div>
 );
-
+const margin = { top: 40, right: 120, bottom: 40, left: 50 };
 const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
   width = 800,
   height = 400,
   series,
 }) => {
   // 차트 여백 설정
-  const margin = { top: 40, right: 120, bottom: 40, left: 50 };
+
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -159,19 +136,6 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
       nice: true,
     });
   }, [series, innerHeight]);
-
-  // 라인 생성기
-  const createLinePath = useCallback(
-    (data: DataPoint[]) => {
-      const lineGenerator = line<DataPoint>()
-        .x((d) => xScale(getDate(d).getTime()))
-        .y((d) => yScale(getValue(d)))
-        .curve(curveMonotoneX);
-
-      return lineGenerator(data);
-    },
-    [xScale, yScale],
-  );
 
   // 마우스 이벤트 핸들러
   const handleMouseMove = useCallback(
@@ -211,7 +175,7 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
         date,
       });
     },
-    [xScale, yScale, series, margin],
+    [xScale, yScale, series],
   );
 
   // 마우스 이벤트 제거 핸들러
@@ -233,9 +197,9 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
         />
       )}
 
-      {/* 시리즈별 툴팁 */}
+      {/* 시리즈별 툴팁 - 값이 큰 순서대로 정렬 */}
       {hoverInfo.tooltips
-        .sort((a, b) => a.yPos - b.yPos)
+        .sort((a, b) => b.value - a.value)
         .map((tooltip, index) => (
           <SeriesToolTip
             key={tooltip.seriesName}
@@ -249,19 +213,7 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
         ))}
 
       <svg width={width} height={height}>
-        <g transform={`translate(${margin.left},${margin.top})`}>
-          {/* 그리드 */}
-          <Grid
-            xScale={xScale}
-            yScale={yScale}
-            width={innerWidth}
-            height={innerHeight}
-            stroke="#e0e0e0"
-            strokeOpacity={0.2}
-            numTicksRows={5}
-            numTicksColumns={10}
-          />
-
+        <Group left={margin.left} top={margin.top}>
           {/* Vertical Hover Line */}
           {hoverInfo.hoverLineX !== null && (
             <line
@@ -276,17 +228,31 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
             />
           )}
 
-          {/* 데이터 라인 */}
+          {/* 데이터 라인 및 포인트 */}
           {series.map((s) => (
-            <g key={s.name}>
-              <path
-                d={createLinePath(s.data) || ""}
+            <React.Fragment key={s.name}>
+              <LinePath
+                data={s.data}
+                x={(d) => xScale(getDate(d).getTime()) ?? 0}
+                y={(d) => yScale(getValue(d)) ?? 0}
                 stroke={s.color}
                 strokeWidth={2}
-                fill="none"
-                opacity={0.8}
               />
-            </g>
+              {/* 호버 시 현재 포인트 표시 */}
+              {hoverInfo.tooltips
+                .filter((t) => t.seriesName === s.name)
+                .map((tooltip) => (
+                  <Circle
+                    key={`point-${tooltip.seriesName}`}
+                    cx={xScale(tooltip.date.getTime())}
+                    cy={yScale(tooltip.value)}
+                    r={4}
+                    fill={s.color}
+                    stroke="white"
+                    strokeWidth={2}
+                  />
+                ))}
+            </React.Fragment>
           ))}
 
           {/* 마우스 이벤트를 위한 투명한 오버레이 */}
@@ -305,7 +271,7 @@ const EnhancedMultiSeriesChart2: React.FC<MultiSeriesChartProps> = ({
             tickFormat={(val) => formatDate(val as Date)}
           />
           <AxisLeft scale={yScale} />
-        </g>
+        </Group>
       </svg>
     </div>
   );
