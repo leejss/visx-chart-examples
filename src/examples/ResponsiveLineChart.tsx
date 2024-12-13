@@ -106,7 +106,7 @@ const ResponsiveLineChartInner: React.FC<ChartProps> = ({ width, height }) => {
 // 실제 렌더링은 ParentSize를 이용해 래퍼 div의 크기를 가져온 뒤, 그 값을 ResponsiveLineChartInner에 전달
 
 // ParentSize 컴포넌트를 이용하여 차트의 사이즈를 조정한다.
-export const ResponsiveLineChart: React.FC = () => {
+const ResponsiveLineChart = () => {
   return (
     <div
       className="flex items-center justify-center p-4 bg-gray-100"
@@ -121,3 +121,5 @@ export const ResponsiveLineChart: React.FC = () => {
     </div>
   );
 };
+
+export default ResponsiveLineChart;

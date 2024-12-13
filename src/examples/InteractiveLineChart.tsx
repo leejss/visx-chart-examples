@@ -9,6 +9,7 @@ import { extent, bisector } from "d3-array";
 import { useTooltip, TooltipWithBounds, defaultStyles } from "@visx/tooltip";
 import { timeFormat } from "d3-time-format";
 import { format } from "date-fns";
+import { generateFinancialData } from "../lib/data";
 
 // 데이터 포인트 타입 정의
 interface DataPoint {
@@ -17,11 +18,6 @@ interface DataPoint {
 }
 
 // 실제 차트 컴포넌트에 전달될 props 타입 정의
-interface LineChartProps {
-  width: number;
-  height: number;
-  data: DataPoint[];
-}
 
 // 날짜 포맷터 설정
 const formatDate = timeFormat("%Y-%m-%d");
@@ -30,14 +26,13 @@ const formatDate = timeFormat("%Y-%m-%d");
 const getDate = (d: DataPoint) => d.date;
 const getValue = (d: DataPoint) => d.value;
 const bisectDate = bisector<DataPoint, Date>((d) => d.date).left;
+const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+const width = 1600;
+const height = 900;
+const data = generateFinancialData();
 
-const InteractiveLineChart: React.FC<LineChartProps> = ({
-  width = 800,
-  height = 400,
-  data,
-}) => {
+const InteractiveLineChart = () => {
   // Set avg dimension
-  const margin = { top: 20, right: 20, bottom: 40, left: 50 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
@@ -59,7 +54,7 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
       range: [0, innerWidth],
       domain: [domain[0].getTime(), domain[1].getTime()],
     });
-  }, [data, innerWidth]);
+  }, [innerWidth]);
 
   // Y축 스케일
   const yScale = useMemo(() => {
@@ -70,12 +65,13 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
       domain: [domain[0] - padding, domain[1] + padding],
       nice: true,
     });
-  }, [data, innerHeight]);
+  }, [innerHeight]);
 
   // 라인 생성기
   // The .x() method defines how to get the x-coordinate, converting dates to timestamps and then to pixel values using xScale
   // The .y() method defines how to get the y-coordinate, using yScale to convert data values to pixel positions
   // The .curve(curveMonotoneX) method sets the interpolation method between points to create a smooth, monotonic line that preserves monotonicity in the data
+
   // Converting data points to a line path
   const linePath = useMemo(() => {
     const lineGenerator = line<DataPoint>()
@@ -84,7 +80,7 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
       .curve(curveMonotoneX);
 
     return lineGenerator(data);
-  }, [data, xScale, yScale]);
+  }, [xScale, yScale]);
 
   // 마우스 이벤트 핸들러
   const handleMouseMove = useCallback(
@@ -121,7 +117,7 @@ const InteractiveLineChart: React.FC<LineChartProps> = ({
         setHoverLineX(xScale(getDate(tooltipData).getTime()));
       }
     },
-    [showTooltip, xScale, yScale, data, margin],
+    [showTooltip, xScale, yScale],
   );
 
   return (

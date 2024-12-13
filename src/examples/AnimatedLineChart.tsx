@@ -18,13 +18,13 @@ const generateData = (count: number, min: number, max: number): DataPoint[] => {
     y: Math.floor(Math.random() * (max - min + 1)) + min,
   }));
 };
+const width = 1600;
+const height = 900;
+const margin = { top: 20, right: 20, bottom: 40, left: 40 };
 
 // 데이터 셋 변경 -> 라인 변경 애니메이션
 const AnimatedLineChart = () => {
   // 차트 크기 설정
-  const width = 600;
-  const height = 400;
-  const margin = { top: 20, right: 20, bottom: 40, left: 40 };
 
   // 실제 차트가 그려질 영역 크기
   const innerWidth = width - margin.left - margin.right;

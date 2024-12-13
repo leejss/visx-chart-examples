@@ -22,7 +22,7 @@ const margin = { top: 20, right: 20, bottom: 20, left: 40 };
 // Translate input data to pixel values
 // Mapping: Data space to Screen space
 
-export const BasicLineChart: React.FC = () => {
+const BasicLineChart: React.FC = () => {
   // x, y 범위 구하기
   const xValues = data.map((d) => d.x);
   const yValues = data.map((d) => d.y);
@@ -62,3 +62,5 @@ export const BasicLineChart: React.FC = () => {
     </div>
   );
 };
+
+export default BasicLineChart;

@@ -1,8 +1,7 @@
-import React from "react";
+import { AxisBottom, AxisLeft } from "@visx/axis";
+import { GridColumns, GridRows } from "@visx/grid";
 import { scaleLinear } from "@visx/scale";
 import { LinePath } from "@visx/shape";
-import { AxisBottom, AxisLeft } from "@visx/axis";
-import { GridRows, GridColumns } from "@visx/grid";
 
 type DataPoint = { x: number; y: number };
 const createDynamicData = (length: number): DataPoint[] => {
@@ -22,7 +21,7 @@ const height = 300;
 const margin = { top: 20, right: 20, bottom: 40, left: 40 };
 // bottom margin을 조금 늘려 축 레이블이 겹치지 않게 함
 
-export const LineChartWithAxisAndGrid: React.FC = () => {
+const LineChartWithAxisAndGrid = () => {
   // x, y 범위 계산
   const xValues = data.map((d) => d.x);
   const yValues = data.map((d) => d.y);
@@ -102,3 +101,5 @@ export const LineChartWithAxisAndGrid: React.FC = () => {
     </div>
   );
 };
+
+export default LineChartWithAxisAndGrid;

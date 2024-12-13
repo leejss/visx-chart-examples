@@ -38,3 +38,5 @@ const createLinePath = (data: DataPoint[]) => {
 - 포인터의 x, y 좌표를 얻는다.
 - 그리고 포인터 위치에 대응하는 데이터를 얻는다.
 - rect 요소를 통해서 hover area를 설정한다.
+
+## Data Processing - Change Data Range
