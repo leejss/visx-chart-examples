@@ -10,6 +10,7 @@ import {
   InteractiveLineChart,
   MultiSeriesLineChart,
 } from "./examples";
+import SingleTooltipExample from "./examples/SingleTooltipExample";
 
 const examples = [
   {
@@ -47,6 +48,10 @@ const examples = [
   {
     name: "EnhancedMultiSeriesSelect2",
     component: EnhancedMultiSeriesSelect2,
+  },
+  {
+    name: "SingleTooltipExample",
+    component: SingleTooltipExample,
   },
 ];
 
