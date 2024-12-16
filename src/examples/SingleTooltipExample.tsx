@@ -57,7 +57,7 @@ const SingleTooltip = ({
   // domain: maps from min to max dates in the data
   const xScale = scaleLinear({
     range: [0, innerWidth],
-    domain: extent(data, getDate) as [Date, Date],
+    domain: extent(data, (d) => getDate(d).getTime()) as [number, number],
   });
 
   // Create y-axis scale that maps values to vertical pixel positions
@@ -71,30 +71,53 @@ const SingleTooltip = ({
 
   const handleMouseMove = useCallback(
     (event: React.MouseEvent | React.TouchEvent) => {
-      // 툴팁에 보여줄 데이터와 툴팁의 좌표를 계산한다.
-      // 1. 먼저 마우스 좌표를 계산한다.
       const point = localPoint(event) || { x: 0, y: 0 };
+      // Group의 transform을 고려하여 margin.top을 빼줍니다
       const x = point.x - margin.left;
-      const timestamp = xScale.invert(x);
+      const y = point.y - margin.top;
 
-      // 2. 가장 가까운 데이터 포인트를 찾는다.
-      const index = bisectDate(data, new Date(timestamp));
+      // 차트 영역을 벗어난 경우 툴팁을 표시하지 않습니다
+      if (x < 0 || x > innerWidth || y < 0 || y > innerHeight) {
+        hideTooltip();
+        return;
+      }
+
+      const timestamp = xScale.invert(x);
+      const date = new Date(timestamp);
+
+      const index = bisectDate(data, date);
       const d0 = data[index - 1];
       const d1 = data[index];
 
       if (d0 && d1) {
         const isCloserToD1 =
-          timestamp - getDate(d0).getTime() > getDate(d1).getTime() - timestamp;
+          Math.abs(timestamp - getDate(d0).getTime()) >
+          Math.abs(getDate(d1).getTime() - timestamp);
 
         const tooltipData = isCloserToD1 ? d1 : d0;
+        const dataX = xScale(getDate(tooltipData).getTime());
+        const dataY = yScale(getValue(tooltipData));
+
         showTooltip({
           tooltipData,
-          tooltipLeft: xScale(getDate(tooltipData).getTime()) + margin.left,
-          tooltipTop: yScale(getValue(tooltipData)) + margin.top,
+          // margin.left를 더해서 SVG 내에서의 실제 위치를 계산합니다
+          tooltipLeft: dataX + margin.left,
+          // margin.top을 더해서 SVG 내에서의 실제 위치를 계산합니다
+          tooltipTop: dataY + margin.top,
         });
       }
     },
-    [showTooltip, xScale, yScale, data, margin.left, margin.top],
+    [
+      showTooltip,
+      hideTooltip,
+      xScale,
+      yScale,
+      data,
+      margin.left,
+      margin.top,
+      innerWidth,
+      innerHeight,
+    ],
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -123,7 +146,7 @@ const SingleTooltip = ({
           {/* LinePath */}
           <LinePath
             data={data}
-            x={(d) => xScale(getDate(d)) ?? 0}
+            x={(d) => xScale(getDate(d).getTime()) ?? 0}
             y={(d) => yScale(getValue(d)) ?? 0}
             stroke="#4f46e5"
             strokeWidth={2}
