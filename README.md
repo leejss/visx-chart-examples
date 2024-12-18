@@ -1,17 +1,12 @@
-# Visx Examples
+# Visx Line Charts Examples
 
-## Key aspects
+## Key components
 
-- Data processing
-  - Define scale
-  - Handle tick
-- Draw line path
-- Draw circle
-- Draw axis
-- Draw tooltip
-
-- Control tick
-  - 틱 간격
-  - 틱 레이블
-  - 틱 레이블 위치
-  - 틱 레이블 포맷
+- svg area
+- Group
+- Axis
+- LinePath
+- Tooltip
+- scaleLinear
+- managing state and handle events
+- data processing and data formatting
